@@ -20,16 +20,13 @@ class Rute {
         stoppesteder[b] << new Strekning(a, reisetid)
     }
 
-    // TODO rydd opp i denne
-    int finnReisetid(Stoppested start, Stoppested stopp, Set<Stoppested> visited = new HashSet<>()) {
+    int finnReisetid(Stoppested start, Stoppested stopp, Set<Stoppested> besokt = new HashSet<>()) {
         if (start == stopp) return 0
-
-        visited << start
-
-        for (edge in stoppesteder[start]) {
-            if (!visited.contains(edge.stasjon)) {
-                int distance = finnReisetid(edge.stasjon, stopp, visited)
-                if (distance != -1) return edge.reisetid + distance
+        besokt << start
+        for (strekning in stoppesteder[start]) {
+            if (!besokt.contains(strekning.stasjon)) {
+                int distance = finnReisetid(strekning.stasjon, stopp, besokt)
+                if (distance != -1) return strekning.reisetid + distance
             }
         }
         return -1
