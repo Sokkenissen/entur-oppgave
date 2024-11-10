@@ -66,8 +66,7 @@ class Rute {
 
     // Denne har per nå kun støtte for en retning...
     def beregnFortjeneste(String tidspunkt, Stoppested startStasjon) {
-        def (sum, multiplikator) = [0, 1]
-        def besokt = new HashSet<Stoppested>()
+        def (sum, multiplikator, besokt) = [0, 1, new HashSet<Stoppested>()]
         def gjeldendeStopp = stoppesteder[startStasjon]?.last
 
         while (gjeldendeStopp && !besokt.contains(gjeldendeStopp.stasjon)) {
@@ -82,7 +81,8 @@ class Rute {
 
     @Override
     String toString() {
-        stoppesteder.collect { k, v -> "${k.navn} -> ${v.last().stasjon.navn}" }.join("\n")
+        stoppesteder.collect { k, v ->
+            "${k.navn} <-- ${v.last().reisetid} --> ${v.last().stasjon.navn}" }.join("\n")
     }
 
 }
