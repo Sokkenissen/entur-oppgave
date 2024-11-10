@@ -123,9 +123,9 @@ class RuteTest extends Specification {
             antallReisende == forventetAntallReisende
         where:
             fraStasjon  | tilStasjon | tidspunkt | forventetAntallReisende | beskrivelse
-            lillehammer | oslos      | "0600"    | 2025                    | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt (i rush)"
-            lillehammer | oslos      | "1030"    | 1850                    | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt (utenfor rush)"
-            moelv       | oslos      | "0630"    | 1725                    | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt"
+            lillehammer | oslos      | "0600"    | 2_025                    | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt (i rush)"
+            lillehammer | oslos      | "1030"    | 1_850                    | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt (utenfor rush)"
+            moelv       | oslos      | "0630"    | 1_725                    | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt"
             moelv       | tangen     | "0630"    | 925                     | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt"
     }
 
@@ -139,16 +139,16 @@ class RuteTest extends Specification {
             R10.leggTilStoppested(tangen, OSL, 20)
             R10.leggTilStoppested(OSL, oslos, 30)
         when:
-            def totalFortjeneste = R10.beregnFortjeneste(tidspunkt, stoppested)
+            def totalFortjeneste = R10.beregnFortjeneste(tidspunkt, avreisested)
         then:
             totalFortjeneste == forventetFortjeneste
         where:
-            stoppested        | tidspunkt | forventetFortjeneste | beskrivelse
-            lillehammer       | "0600"    | 627_500              | "Total fortjeneste fra ${stoppested.navn} i rushtid"
-            lillehammer       | "1030"    | 592_500              | "Total fortjeneste fra ${stoppested.navn} utenfor rushtid"
-            moelv             | "0630"    | 455_000              | "Total fortjeneste fra ${stoppested.navn}"
-            stange            | "0626"    | 180_000              | "Total fortjeneste fra ${stoppested.navn}"
-            grorud            | "0600"    | 0                    | "Total fortjeneste fra ${stoppested.navn} (ikke oppgitt avgang)"
+            avreisested | tidspunkt | forventetFortjeneste | beskrivelse
+            lillehammer | "0600"    | 627_500              | "Total fortjeneste fra ${avreisested.navn} i rushtid"
+            lillehammer | "1030"    | 592_500              | "Total fortjeneste fra ${avreisested.navn} utenfor rushtid"
+            moelv       | "0630"    | 455_000              | "Total fortjeneste fra ${avreisested.navn}"
+            stange      | "0626"    | 180_000              | "Total fortjeneste fra ${avreisested.navn}"
+            grorud      | "0600"    | 0                    | "Total fortjeneste fra ${avreisested.navn} (ikke oppgitt avgang)"
     }
 
 }
