@@ -8,14 +8,16 @@ class RuteTest extends Specification {
 
     @Shared def R10 = new Rute("R10")
 
-    @Shared def lillehammer = new Stoppested("Lillehammer", Kommune.LILLEHAMMER, 1.0)
-    @Shared def moelv = new Stoppested("Moelv", Kommune.RINGSAKER, 0.5)
-    @Shared def brumunddal = new Stoppested("Brumunddal", Kommune.RINGSAKER, 1.0)
-    @Shared def stange = new Stoppested("Stange", Kommune.STANGE, 1.0)
-    @Shared def tangen = new Stoppested("Tangen", Kommune.STANGE, 1.0)
-    @Shared def OSL = new Stoppested("Oslo Lufthavn", Kommune.ULLENSAKER, 2.0)
-    @Shared def oslos = new Stoppested("Oslo S", Kommune.OSLO, 1.5)
-    @Shared def grorud = new Stoppested("Grorud", Kommune.OSLO, 1.0)
+    @Shared def lillehammer = new Stoppested("Lillehammer", Kommune.LILLEHAMMER, 0.01)
+    @Shared def moelv = new Stoppested("Moelv", Kommune.RINGSAKER, 0.01)
+    @Shared def brumunddal = new Stoppested("Brumunddal", Kommune.RINGSAKER, 0.01,
+            new Tuple(LocalTime.of(6, 0), LocalTime.of(8, 0))
+    )
+    @Shared def stange = new Stoppested("Stange", Kommune.STANGE, 0.01)
+    @Shared def tangen = new Stoppested("Tangen", Kommune.STANGE, 0.01)
+    @Shared def OSL = new Stoppested("Oslo Lufthavn", Kommune.ULLENSAKER, 0.02)
+    @Shared def oslos = new Stoppested("Oslo S", Kommune.OSLO, 0.0)
+    @Shared def grorud = new Stoppested("Grorud", Kommune.OSLO, 0.0)
 
     def setupSpec() {
         lillehammer.leggTilAvganger(oslos, [
@@ -24,6 +26,11 @@ class RuteTest extends Specification {
                 LocalTime.of(6, 0),
                 LocalTime.of(6, 30),
                 LocalTime.of(7, 0),
+                LocalTime.of(10, 30),
+        ])
+        moelv.leggTilAvganger(oslos, [
+                LocalTime.of(6, 30),
+                LocalTime.of(7, 0)
         ])
         stange.leggTilAvganger(lillehammer,[
                 LocalTime.of(6, 02),
@@ -85,6 +92,23 @@ class RuteTest extends Specification {
     }
 
     @Unroll
+    def 'hentAntallReisendeForAvgang: skal kunne hente korrekt antall reisende'() {
+        when:
+            def antallReisende = stoppested.hentAntallReisendeForAvgang(avgangstid)
+        then:
+            antallReisende == forventetAntallReisende
+        where:
+            stoppested  | avgangstid             | forventetAntallReisende
+            lillehammer | LocalTime.of(6 ,0)     | 300
+            OSL         | LocalTime.of(6 ,0)     | 800
+            oslos       | LocalTime.of(6 ,0)     | 0
+            brumunddal  | LocalTime.of(5 ,0)     | 175
+            brumunddal  | LocalTime.of(6 ,0)     | 350
+            brumunddal  | LocalTime.of(7 ,15)    | 350
+            moelv       | LocalTime.of(6 ,0)     | 175
+    }
+
+    @Unroll
     def 'hentAntallReisende: skal kunne hente alle reisende for en avgang på et gitt tidspunkt'() {
         given:
             R10.leggTilStoppested(lillehammer, moelv, 30)
@@ -94,12 +118,15 @@ class RuteTest extends Specification {
             R10.leggTilStoppested(tangen, OSL, 20)
             R10.leggTilStoppested(OSL, oslos, 30)
         when:
-            def antallReisende = R10.hentAntallReisende(tidspunkt, stasjon)
+            def antallReisende = R10.hentAntallReisende(tidspunkt, fraStasjon, tilStasjon)
         then:
             antallReisende == forventetAntallReisende
         where:
-            stasjon     | tidspunkt | forventetAntallReisende | beskrivelse
-            lillehammer | "0500"    | 2025                    | "Antall reisende fra ${stasjon.navn} med avgang $tidspunkt"
+            fraStasjon  | tilStasjon | tidspunkt | forventetAntallReisende | beskrivelse
+            lillehammer | oslos      | "0600"    | 2025                    | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt (i rush)"
+            lillehammer | oslos      | "1030"    | 1850                    | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt (utenfor rush)"
+            moelv       | oslos      | "0630"    | 1725                    | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt"
+            moelv       | tangen     | "0630"    | 925                     | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt"
     }
 
 }

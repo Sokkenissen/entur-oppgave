@@ -27,8 +27,8 @@ class Rute {
         visited << start
 
         for (edge in stoppesteder[start]) {
-            if (!visited.contains(edge.tilknyttede)) {
-                int distance = finnReisetid(edge.tilknyttede, stopp, visited)
+            if (!visited.contains(edge.stasjon)) {
+                int distance = finnReisetid(edge.stasjon, stopp, visited)
                 if (distance != -1) return edge.reisetid + distance
             }
         }
@@ -53,17 +53,23 @@ class Rute {
         return avganger
     }
 
-    def hentAntallReisende(String tidspunkt, Stoppested avgangsstasjon) {
-        def avgang = hentAvganger(tidspunkt, avgangsstasjon, true)
-        if (avgang) {
-            return 1
+    // Denne har per nå kun støtte for en retning...
+    def hentAntallReisende(String tidspunkt, Stoppested avgangsstasjon, Stoppested endestasjon) {
+        def sum = 0
+        def gjeldendeStasjon = avgangsstasjon
+        while (gjeldendeStasjon && gjeldendeStasjon != endestasjon) {
+            sum += gjeldendeStasjon.hentAntallReisendeForAvgang(tidspunkt, formatter)
+            gjeldendeStasjon = stoppesteder[gjeldendeStasjon]?.last?.stasjon
         }
-        return -1
+        if (gjeldendeStasjon == endestasjon) {
+            sum += endestasjon.hentAntallReisendeForAvgang(tidspunkt, formatter)
+        }
+        return sum
     }
 
     @Override
     String toString() {
-        stoppesteder.collect { k, v -> "${k.navn} -> ${v.last().tilknyttede.navn}" }.join("\n")
+        stoppesteder.collect { k, v -> "${k.navn} -> ${v.last().stasjon.navn}" }.join("\n")
     }
 
 }
