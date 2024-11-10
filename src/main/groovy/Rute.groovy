@@ -68,7 +68,6 @@ class Rute {
     def beregnFortjeneste(String tidspunkt, Stoppested startStasjon) {
         def (sum, multiplikator, besokt) = [0, 1, new HashSet<Stoppested>()]
         def gjeldendeStopp = stoppesteder[startStasjon]?.last
-
         while (gjeldendeStopp && !besokt.contains(gjeldendeStopp.stasjon)) {
             besokt << gjeldendeStopp.stasjon
             def antallReisende = gjeldendeStopp.stasjon.hentAntallReisendeForAvgang(tidspunkt, formatter)
