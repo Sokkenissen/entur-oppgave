@@ -129,4 +129,26 @@ class RuteTest extends Specification {
             moelv       | tangen     | "0630"    | 925                     | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt"
     }
 
+    @Unroll
+    def 'beregnFortjeneste: skal kunne beregne total fortjeneste for gitt avgang'() {
+        given:
+            R10.leggTilStoppested(lillehammer, moelv, 30)
+            R10.leggTilStoppested(moelv, brumunddal, 30)
+            R10.leggTilStoppested(brumunddal, stange, 20)
+            R10.leggTilStoppested(stange, tangen, 20)
+            R10.leggTilStoppested(tangen, OSL, 20)
+            R10.leggTilStoppested(OSL, oslos, 30)
+        when:
+            def totalFortjeneste = R10.beregnFortjeneste(tidspunkt, stoppested)
+        then:
+            totalFortjeneste == forventetFortjeneste
+        where:
+            stoppested        | tidspunkt | forventetFortjeneste | beskrivelse
+            lillehammer       | "0600"    | 627_500              | "Total fortjeneste fra ${stoppested.navn} i rushtid"
+            lillehammer       | "1030"    | 592_500              | "Total fortjeneste fra ${stoppested.navn} utenfor rushtid"
+            moelv             | "0630"    | 455_000              | "Total fortjeneste fra ${stoppested.navn}"
+            stange            | "0626"    | 180_000              | "Total fortjeneste fra ${stoppested.navn}"
+            grorud            | "0600"    | 0                    | "Total fortjeneste fra ${stoppested.navn} (ikke oppgitt avgang)"
+    }
+
 }

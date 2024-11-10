@@ -23,10 +23,6 @@ class Stoppested {
         else this.avganger << new Avgang(stoppested, avganger)
     }
 
-    def finnAvganger(Stoppested stoppested) {
-        return this.avganger.find { it.stasjon == stoppested }?.avganger ?: []
-    }
-
     def hentAntallReisendeForAvgang(LocalTime avgang) {
         def antallReisende = this.prosentReisende * Kommune.hentInnbyggertall(kommune)
         if (rushtid) {
