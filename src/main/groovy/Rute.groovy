@@ -10,7 +10,7 @@ class Rute {
 
     Rute(String rutenavn) {
         this.rutenavn = rutenavn
-        stoppesteder = new LinkedList<>()
+        stoppesteder = new LinkedHashMap<>()
     }
 
     def leggTilStoppested(Stoppested a, Stoppested b, int reisetid) {
@@ -35,18 +35,30 @@ class Rute {
         return -1
     }
 
-    def hentAvganger(String tidspunkt, Stoppested stoppested) {
+    List<Avgang> hentAvganger(String tidspunkt, Stoppested stoppested, boolean brukEksaktTid = false) {
         // TODO handle illegal input
         def fraTid = LocalTime.parse(tidspunkt, formatter)
         def stopp = stoppesteder.find { it.key == stoppested }.key
         def avganger = []
         if (stopp) {
-            stopp.avganger.each { k, v ->
-                // Use builtin LocalTime.isBefore to fetch all departures before a given time
-                avganger << v.findAll { it.isBefore(fraTid) }
+            stopp.avganger.each { avgang ->
+                def matchingTimes = brukEksaktTid
+                        ? avgang.avganger.findAll { it == fraTid }
+                        : avgang.avganger.findAll { it.isBefore(fraTid) }
+                // This is supid... But works for now
+                // TODO refactor
+                if (matchingTimes) avganger.add(new Avgang(avgang.stasjon, matchingTimes))
             }
         }
-        return avganger.flatten() // avganger is a 2 dimensional list, flatten it
+        return avganger
+    }
+
+    def hentAntallReisende(String tidspunkt, Stoppested avgangsstasjon) {
+        def avgang = hentAvganger(tidspunkt, avgangsstasjon, true)
+        if (avgang) {
+            return 1
+        }
+        return -1
     }
 
     @Override

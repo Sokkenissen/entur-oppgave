@@ -8,22 +8,22 @@ class RuteTest extends Specification {
 
     @Shared def R10 = new Rute("R10")
 
-    @Shared def lillehammer = new Stoppested("Lillehammer", Kommune.LILLEHAMMER)
-    @Shared def moelv = new Stoppested("Moelv", Kommune.RINGSAKER)
-    @Shared def brumunddal = new Stoppested("Brumunddal", Kommune.RINGSAKER)
-    @Shared def stange = new Stoppested("Stange", Kommune.STANGE)
-    @Shared def tangen = new Stoppested("Tangen", Kommune.STANGE)
-    @Shared def OSL = new Stoppested("Oslo Lufthavn", Kommune.ULLENSAKER)
-    @Shared def oslos = new Stoppested("Oslo S", Kommune.OSLO)
-    @Shared def grorud = new Stoppested("Grorud", Kommune.OSLO)
+    @Shared def lillehammer = new Stoppested("Lillehammer", Kommune.LILLEHAMMER, 1.0)
+    @Shared def moelv = new Stoppested("Moelv", Kommune.RINGSAKER, 0.5)
+    @Shared def brumunddal = new Stoppested("Brumunddal", Kommune.RINGSAKER, 1.0)
+    @Shared def stange = new Stoppested("Stange", Kommune.STANGE, 1.0)
+    @Shared def tangen = new Stoppested("Tangen", Kommune.STANGE, 1.0)
+    @Shared def OSL = new Stoppested("Oslo Lufthavn", Kommune.ULLENSAKER, 2.0)
+    @Shared def oslos = new Stoppested("Oslo S", Kommune.OSLO, 1.5)
+    @Shared def grorud = new Stoppested("Grorud", Kommune.OSLO, 1.0)
 
     def setupSpec() {
         lillehammer.leggTilAvganger(oslos, [
+                LocalTime.of(5, 0),
+                LocalTime.of(5, 30),
                 LocalTime.of(6, 0),
                 LocalTime.of(6, 30),
                 LocalTime.of(7, 0),
-                LocalTime.of(7, 30),
-                LocalTime.of(8, 0),
         ])
         stange.leggTilAvganger(lillehammer,[
                 LocalTime.of(6, 02),
@@ -71,16 +71,35 @@ class RuteTest extends Specification {
         when:
             def avganger = R10.hentAvganger(tidspunkt, stoppested)
         then:
-            avganger.size() == forventedeAntallAvganger
+            avganger.collect { it.avganger }.flatten().size() == forventedeAntallAvganger
+            avganger.collect { it.stasjon }.containsAll(endestasjoner)
         where:
-            stoppested  | tidspunkt | forventedeAntallAvganger | beskrivelse
-            lillehammer | "0645"    | 2                        | "Antall avganger fra ${stoppested.navn} innen en time fra $tidspunkt"
-            lillehammer | "0815"    | 5                        | "Antall avganger fra ${stoppested.navn} innen en time fra $tidspunkt"
-            lillehammer | "0530"    | 0                        | "Antall avganger fra ${stoppested.navn} innen en time fra $tidspunkt"
-            stange      | "0630"    | 3                        | "Antall avganger fra ${stoppested.navn} innen en time fra $tidspunkt"
-            stange      | "0400"    | 0                        | "Antall avganger fra ${stoppested.navn} innen en time fra $tidspunkt"
-            stange      | "0815"    | 7                        | "Antall avganger fra ${stoppested.navn} innen en time fra $tidspunkt"
-            brumunddal  | "0815"    | 0                        | "Antall avganger fra ${stoppested.navn} innen en time fra $tidspunkt"
+            stoppested  | tidspunkt | forventedeAntallAvganger | endestasjoner
+            lillehammer | "0545"    | 2                        | [oslos]
+            lillehammer | "0715"    | 5                        | [oslos]
+            lillehammer | "0430"    | 0                        | []
+            stange      | "0630"    | 3                        | [oslos, lillehammer]
+            stange      | "0400"    | 0                        | []
+            stange      | "0815"    | 7                        | [oslos, lillehammer]
+            brumunddal  | "0815"    | 0                        | []
+    }
+
+    @Unroll
+    def 'hentAntallReisende: skal kunne hente alle reisende for en avgang på et gitt tidspunkt'() {
+        given:
+            R10.leggTilStoppested(lillehammer, moelv, 30)
+            R10.leggTilStoppested(moelv, brumunddal, 30)
+            R10.leggTilStoppested(brumunddal, stange, 20)
+            R10.leggTilStoppested(stange, tangen, 20)
+            R10.leggTilStoppested(tangen, OSL, 20)
+            R10.leggTilStoppested(OSL, oslos, 30)
+        when:
+            def antallReisende = R10.hentAntallReisende(tidspunkt, stasjon)
+        then:
+            antallReisende == forventetAntallReisende
+        where:
+            stasjon     | tidspunkt | forventetAntallReisende | beskrivelse
+            lillehammer | "0500"    | 2025                    | "Antall reisende fra ${stasjon.navn} med avgang $tidspunkt"
     }
 
 }

@@ -4,20 +4,24 @@ class Stoppested {
 
     String navn
     String kommune
-    Map<Stoppested, List<LocalTime>> avganger
+    List<Avgang> avganger
+    double prosentReisende
 
-    Stoppested(String navn, Kommune kommune) {
+    Stoppested(String navn, Kommune kommune, double prosentReisende) {
         this.navn = navn
         this.kommune = kommune
-        this.avganger = [:]
+        this.avganger = []
+        this.prosentReisende = prosentReisende
     }
 
     def leggTilAvganger(Stoppested stoppested, List<LocalTime> avganger) {
-        if (!this.avganger.containsKey(stoppested)) {
-            this.avganger[stoppested] = []
-        }
-        this.avganger[stoppested].addAll(avganger)
+        def existingAvgang = this.avganger.find { it.stasjon == stoppested }
+        if (existingAvgang) existingAvgang.avganger.addAll(avganger)
+        else this.avganger << new Avgang(stoppested, avganger)
     }
 
+    def finnAvganger(Stoppested stoppested) {
+        return this.avganger.find { it.stasjon == stoppested }?.avganger ?: []
+    }
 
 }
