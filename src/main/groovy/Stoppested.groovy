@@ -34,12 +34,7 @@ class Stoppested {
                 antallReisende = antallReisende * 2
             }
         }
-        // TODO this is hardcoded and not how I wanted to do this,
-        //  should have some logic around number of stoppesteder within kommuner
-        if (this.navn == 'Moelv' || this.navn == 'Brumunddal') {
-            antallReisende = antallReisende / 2
-        }
-        return antallReisende
+        return antallReisende / Kommune.antallStoppesteder(kommune)
     }
 
     def hentAntallReisendeForAvgang(String avgang, DateTimeFormatter formatter) {
