@@ -14,4 +14,8 @@ enum Kommune {
         this.innbyggertall = innbyggertall
     }
 
+    static def hentInnbyggertall(Kommune kommune) {
+        return kommune.innbyggertall
+    }
+
 }

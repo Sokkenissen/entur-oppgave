@@ -10,7 +10,7 @@ class Rute {
 
     Rute(String rutenavn) {
         this.rutenavn = rutenavn
-        stoppesteder = new LinkedList<>()
+        stoppesteder = new LinkedHashMap<>()
     }
 
     def leggTilStoppested(Stoppested a, Stoppested b, int reisetid) {
@@ -27,31 +27,49 @@ class Rute {
         visited << start
 
         for (edge in stoppesteder[start]) {
-            if (!visited.contains(edge.tilknyttede)) {
-                int distance = finnReisetid(edge.tilknyttede, stopp, visited)
+            if (!visited.contains(edge.stasjon)) {
+                int distance = finnReisetid(edge.stasjon, stopp, visited)
                 if (distance != -1) return edge.reisetid + distance
             }
         }
         return -1
     }
 
-    def hentAvganger(String tidspunkt, Stoppested stoppested) {
+    List<Avgang> hentAvganger(String tidspunkt, Stoppested stoppested, boolean brukEksaktTid = false) {
         // TODO handle illegal input
         def fraTid = LocalTime.parse(tidspunkt, formatter)
         def stopp = stoppesteder.find { it.key == stoppested }.key
         def avganger = []
         if (stopp) {
-            stopp.avganger.each { k, v ->
-                // Use builtin LocalTime.isBefore to fetch all departures before a given time
-                avganger << v.findAll { it.isBefore(fraTid) }
+            stopp.avganger.each { avgang ->
+                def matchingTimes = brukEksaktTid
+                        ? avgang.avganger.findAll { it == fraTid }
+                        : avgang.avganger.findAll { it.isBefore(fraTid) }
+                // This is supid... But works for now
+                // TODO refactor
+                if (matchingTimes) avganger.add(new Avgang(avgang.stasjon, matchingTimes))
             }
         }
-        return avganger.flatten() // avganger is a 2 dimensional list, flatten it
+        return avganger
+    }
+
+    // Denne har per nå kun støtte for en retning...
+    def hentAntallReisende(String tidspunkt, Stoppested avgangsstasjon, Stoppested endestasjon) {
+        def sum = 0
+        def gjeldendeStasjon = avgangsstasjon
+        while (gjeldendeStasjon && gjeldendeStasjon != endestasjon) {
+            sum += gjeldendeStasjon.hentAntallReisendeForAvgang(tidspunkt, formatter)
+            gjeldendeStasjon = stoppesteder[gjeldendeStasjon]?.last?.stasjon
+        }
+        if (gjeldendeStasjon == endestasjon) {
+            sum += endestasjon.hentAntallReisendeForAvgang(tidspunkt, formatter)
+        }
+        return sum
     }
 
     @Override
     String toString() {
-        stoppesteder.collect { k, v -> "${k.navn} -> ${v.last().tilknyttede.navn}" }.join("\n")
+        stoppesteder.collect { k, v -> "${k.navn} -> ${v.last().stasjon.navn}" }.join("\n")
     }
 
 }

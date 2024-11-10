@@ -1,10 +1,10 @@
 class Strekning {
 
-    Stoppested tilknyttede
+    Stoppested stasjon
     int reisetid
 
     Strekning(Stoppested tilknyttede, int reisetid) {
-        this.tilknyttede = tilknyttede
+        this.stasjon = tilknyttede
         this.reisetid = reisetid
     }
 
