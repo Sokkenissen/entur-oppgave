@@ -45,21 +45,6 @@ class RuteTest extends Specification {
         ])
     }
 
-    def 'skal kunne printe ruterepresentasjon'() {
-        given:
-            R10.leggTilStoppested(lillehammer, moelv, 30)
-            R10.leggTilStoppested(moelv, brumunddal, 30)
-            R10.leggTilStoppested(brumunddal, stange, 20)
-        when:
-            def ruterepresentasjon = R10.toString()
-        then:
-            ruterepresentasjon ==
-'''Lillehammer <-- 30 --> Moelv
-Moelv <-- 30 --> Brumunddal
-Brumunddal <-- 20 --> Stange
-Stange <-- 20 --> Brumunddal'''
-    }
-
     @Unroll
     def 'finnReisetid: skal være #forventetReisetid mellom #fraDestinasjon og #tilDestinasjon'() {
 

@@ -78,10 +78,4 @@ class Rute {
         return sum
     }
 
-    @Override
-    String toString() {
-        stoppesteder.collect { k, v ->
-            "${k.navn} <-- ${v.last().reisetid} --> ${v.last().stasjon.navn}" }.join("\n")
-    }
-
 }
