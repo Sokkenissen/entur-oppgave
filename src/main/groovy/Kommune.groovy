@@ -2,7 +2,7 @@ enum Kommune {
 
     LILLEHAMMER("Lillehammer kommune", 30_000, 1),
     RINGSAKER("Ringsaker kommune", 35_000, 2),
-    STANGE("Stange kommune", 20_000, 1),
+    STANGE("Stange kommune", 20_000, 2),
     ULLENSAKER("Ullensaker kommune", 40_000, 1),
     OSLO("Oslo kommune", 700_000, 1)
 
