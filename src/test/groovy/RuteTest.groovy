@@ -9,16 +9,14 @@ class RuteTest extends Specification {
 
     @Shared def R10 = new Rute("R10")
 
-    @Shared def lillehammer = new Stoppested("Lillehammer", Kommune.LILLEHAMMER, 0.01)
-    @Shared def moelv = new Stoppested("Moelv", Kommune.RINGSAKER, 0.01)
-    @Shared def brumunddal = new Stoppested("Brumunddal", Kommune.RINGSAKER, 0.01,
-            new Tuple(LocalTime.of(6, 0), LocalTime.of(8, 0))
-    )
-    @Shared def stange = new Stoppested("Stange", Kommune.STANGE, 0.01)
-    @Shared def tangen = new Stoppested("Tangen", Kommune.STANGE, 0.01)
-    @Shared def OSL = new Stoppested("Oslo Lufthavn", Kommune.ULLENSAKER, 0.02)
-    @Shared def oslos = new Stoppested("Oslo S", Kommune.OSLO, 0.0)
-    @Shared def grorud = new Stoppested("Grorud", Kommune.OSLO, 0.0)
+    @Shared def lillehammer = new Stoppested("Lillehammer", Kommune.LILLEHAMMER)
+    @Shared def moelv = new Stoppested("Moelv", Kommune.RINGSAKER)
+    @Shared def brumunddal = new Stoppested("Brumunddal", Kommune.RINGSAKER)
+    @Shared def stange = new Stoppested("Stange", Kommune.STANGE)
+    @Shared def tangen = new Stoppested("Tangen", Kommune.STANGE)
+    @Shared def OSL = new Stoppested("Oslo Lufthavn", Kommune.ULLENSAKER)
+    @Shared def oslos = new Stoppested("Oslo S", Kommune.OSLO)
+    @Shared def grorud = new Stoppested("Grorud", Kommune.OSLO)
 
     def setupSpec() {
         lillehammer.leggTilAvganger(oslos, [
@@ -109,6 +107,23 @@ class RuteTest extends Specification {
             lillehammer | "9999"    | DataFormatException | "Ugydlig tidspunkt $tidspunkt"
     }
 
+    // Egentlig kun for min egen sanity...
+    @Unroll
+    def 'hentAntallReisendeForAvgang: skal simulere reise mellom Lillehammer og Oslo s'() {
+        when:
+            def antallReisende = stoppested.hentAntallReisendeForAvgang(avgangstid)
+        then:
+            antallReisende == forventetAntallReisende
+        where:
+            stoppested  | avgangstid             | forventetAntallReisende
+            lillehammer | LocalTime.of(5 ,0)     | 300 // utenfor rush | 30_000 * 0.001     = 300
+            moelv       | LocalTime.of(5 ,30)    | 175 // utenfor rush | 35_000 * 0.001 / 2 = 175
+            brumunddal  | LocalTime.of(6 ,0)     | 350 // rush         | 35_000 * 0.002 / 2 = 350
+            stange      | LocalTime.of(6 ,20)    | 200 // rush         | 20_000 * 0.002 / 2 = 200
+            tangen      | LocalTime.of(6 ,40)    | 200 // rush         | 20_000 * 0.002 / 2 = 200
+            OSL         | LocalTime.of(7 ,0)     | 800 // rush         | 40_000 * 0.002     = 800 | sum = 2025
+    }
+
     @Unroll
     def 'hentAntallReisendeForAvgang: skal kunne hente korrekt antall reisende'() {
         when:
@@ -116,14 +131,19 @@ class RuteTest extends Specification {
         then:
             antallReisende == forventetAntallReisende
         where:
-            stoppested  | avgangstid             | forventetAntallReisende
-            lillehammer | LocalTime.of(6 ,0)     | 300
-            OSL         | LocalTime.of(6 ,0)     | 800
-            oslos       | LocalTime.of(6 ,0)     | 0
-            brumunddal  | LocalTime.of(5 ,0)     | 175
-            brumunddal  | LocalTime.of(6 ,0)     | 350
-            brumunddal  | LocalTime.of(7 ,15)    | 350
-            moelv       | LocalTime.of(6 ,0)     | 175
+            stoppested  | avgangstid             | forventetAntallReisende | beskrivelse
+            lillehammer | LocalTime.of(6 ,0)     | 600                     | "Avgang fra ${stoppested.navn} i rushtid"
+            lillehammer | LocalTime.of(5 ,15)    | 300                     | "Avgang fra ${stoppested.navn} i rolig periode"
+            lillehammer | LocalTime.of(12 ,15)   | 150                     | "Avgang fra ${stoppested.navn} utenfor rushtid"
+            OSL         | LocalTime.of(10 ,0)    | 200                     | "Avgang fra ${stoppested.navn} i rolig periode"
+            OSL         | LocalTime.of(8 ,45)    | 800                     | "Avgang fra ${stoppested.navn} i rushtid"
+            brumunddal  | LocalTime.of(5 ,0)     | 175                     | "Avgang fra ${stoppested.navn} utenfor rushtid"
+            brumunddal  | LocalTime.of(7 ,15)    | 350                     | "Avgang fra ${stoppested.navn} i rushtid"
+            brumunddal  | LocalTime.of(12 ,15)   | 88                      | "Avgang fra ${stoppested.navn} i rolig periode"
+            moelv       | LocalTime.of(5 ,30)    | 175                     | "Avgang fra ${stoppested.navn} utenfor rushtid"
+            tangen      | LocalTime.of(6 ,15)    | 200                     | "Avgang fra ${stoppested.navn} i rushtid"
+            tangen      | LocalTime.of(5 ,15)    | 100                     | "Avgang fra ${stoppested.navn} utenfor rushtid"
+            tangen      | LocalTime.of(12 ,15)   | 50                      | "Avgang fra ${stoppested.navn} i rolig periode"
     }
 
     @Unroll
@@ -141,10 +161,11 @@ class RuteTest extends Specification {
             antallReisende == forventetAntallReisende
         where:
             fraStasjon  | tilStasjon | tidspunkt | forventetAntallReisende | beskrivelse
-            lillehammer | oslos      | "0600"    | 2_025                    | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt (i rush)"
-            lillehammer | oslos      | "1030"    | 1_850                    | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt (utenfor rush)"
-            moelv       | oslos      | "0630"    | 1_725                    | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt"
-            moelv       | tangen     | "0630"    | 925                     | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt"
+            lillehammer | oslos      | "0500"    | 2_025                   | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt (i rush)"
+            lillehammer | oslos      | "1030"    | 626                     | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt (rolig)"
+            lillehammer | oslos      | "1730"    | 1_250                   | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt (utenfor rush)"
+            moelv       | oslos      | "0630"    | 1_900                   | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt"
+            moelv       | tangen     | "0630"    | 900                     | "Antall reisende fra ${fraStasjon.navn} til ${tilStasjon.navn} med avgang $tidspunkt"
     }
 
     @Unroll
@@ -162,11 +183,11 @@ class RuteTest extends Specification {
             totalFortjeneste == forventetFortjeneste
         where:
             avreisested | tidspunkt | forventetFortjeneste | beskrivelse
-            lillehammer | "0600"    | 627_500              | "Total fortjeneste fra ${avreisested.navn} i rushtid"
-            lillehammer | "1030"    | 592_500              | "Total fortjeneste fra ${avreisested.navn} utenfor rushtid"
-            moelv       | "0630"    | 455_000              | "Total fortjeneste fra ${avreisested.navn}"
-            stange      | "0626"    | 180_000              | "Total fortjeneste fra ${avreisested.navn}"
-            grorud      | "0600"    | 0                    | "Total fortjeneste fra ${avreisested.navn} (ikke oppgitt avgang)"
+            lillehammer | "0500"    | 587_500              | "Total fortjeneste fra ${avreisested.navn} utenfor rushtid"
+            lillehammer | "0600"    | 855_000              | "Total fortjeneste fra ${avreisested.navn} i rushtid"
+            lillehammer | "1030"    | 214_200              | "Total fortjeneste fra ${avreisested.navn} i rolig periode"
+            moelv       | "0630"    | 685_000              | "Total fortjeneste fra ${avreisested.navn}"
+            stange      | "0626"    | 540_000              | "Total fortjeneste fra ${avreisested.navn}"
     }
 
 }

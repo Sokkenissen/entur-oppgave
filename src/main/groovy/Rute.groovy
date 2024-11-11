@@ -56,29 +56,25 @@ class Rute {
 
     // Denne har per nå kun støtte for en retning...
     def hentAntallReisende(String tidspunkt, Stoppested avgangsstasjon, Stoppested endestasjon) {
-        def sum = 0
-        def gjeldendeStasjon = avgangsstasjon
+        def (gjeldendeStasjon, sum, varighet) = [avgangsstasjon, 0, 0]
         while (gjeldendeStasjon && gjeldendeStasjon != endestasjon) {
-            sum += gjeldendeStasjon.hentAntallReisendeForAvgang(tidspunkt, formatter)
+            sum += gjeldendeStasjon.hentAntallReisendeForAvgang(tidspunkt, formatter, varighet)
             gjeldendeStasjon = stoppesteder[gjeldendeStasjon]?.last?.stasjon
-        }
-        if (gjeldendeStasjon == endestasjon) {
-            sum += endestasjon.hentAntallReisendeForAvgang(tidspunkt, formatter)
+            varighet += stoppesteder[gjeldendeStasjon]?.reisetid.first
         }
         return sum
     }
 
     // Denne har per nå kun støtte for en retning...
-    def beregnFortjeneste(String tidspunkt, Stoppested startStasjon) {
-        def (sum, multiplikator, besokt) = [0, 1, new HashSet<Stoppested>()]
-        def gjeldendeStopp = stoppesteder[startStasjon]?.last
-        while (gjeldendeStopp && !besokt.contains(gjeldendeStopp.stasjon)) {
-            besokt << gjeldendeStopp.stasjon
-            def antallReisende = gjeldendeStopp.stasjon.hentAntallReisendeForAvgang(tidspunkt, formatter)
-            sum += (antallReisende * (multiplikator++ * 100))
-            gjeldendeStopp = stoppesteder[gjeldendeStopp.stasjon]?.last
+    def beregnFortjeneste(String tidspunkt, Stoppested start, Stoppested stopp = null) {
+        def (gjeldendeStasjon, sum, varighet, multiplukator) = [start, 0, 0, 6]
+        def endestasjon = stopp == null ? stoppesteder.lastEntry().key : stopp
+        while (gjeldendeStasjon && gjeldendeStasjon != endestasjon) {
+            def antallReisende = gjeldendeStasjon.hentAntallReisendeForAvgang(tidspunkt, formatter, varighet)
+            sum += antallReisende * 100 * multiplukator--
+            gjeldendeStasjon = stoppesteder[gjeldendeStasjon]?.last?.stasjon
+            varighet += stoppesteder[gjeldendeStasjon]?.reisetid?.first
         }
-
         return sum
     }
 
