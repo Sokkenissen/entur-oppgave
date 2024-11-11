@@ -1,5 +1,6 @@
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 class Rute {
 
@@ -32,22 +33,25 @@ class Rute {
         return -1
     }
 
-    List<Avgang> hentAvganger(String tidspunkt, Stoppested stoppested, boolean brukEksaktTid = false) {
-        // TODO handle illegal input
-        def fraTid = LocalTime.parse(tidspunkt, formatter)
-        def stopp = stoppesteder.find { it.key == stoppested }.key
-        def avganger = []
-        if (stopp) {
-            stopp.avganger.each { avgang ->
-                def matchingTimes = brukEksaktTid
-                        ? avgang.avganger.findAll { it == fraTid }
-                        : avgang.avganger.findAll { it.isBefore(fraTid) }
-                // This is supid... But works for now
-                // TODO refactor
-                if (matchingTimes) avganger.add(new Avgang(avgang.stasjon, matchingTimes))
+    List<Avgang> hentAvganger(String tidspunkt, Stoppested stoppested) {
+        def parsedTidspunkt = {
+            try {
+                LocalTime.parse(tidspunkt, formatter)
+            } catch (DateTimeParseException ex) {
+                println "Kunne ikke parse $tidspunkt som gyldig tid"
+                throw ex
             }
         }
-        return avganger
+        return hentAvganger(parsedTidspunkt(), stoppested)
+    }
+
+    List<Avgang> hentAvganger(LocalTime tidspunkt, Stoppested stoppested) {
+        def stopp = stoppesteder.find { it.key == stoppested }?.key
+        return stopp ? stopp.avganger.findAll {
+            it.avganger.any { it.isBefore(tidspunkt) }
+        }.collect {
+            new Avgang(it.stasjon, it.avganger.findAll {it.isBefore(tidspunkt) })
+        } : []
     }
 
     // Denne har per nå kun støtte for en retning...

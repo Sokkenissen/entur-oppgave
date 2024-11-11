@@ -3,6 +3,7 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 import java.time.LocalTime
+import java.util.zip.DataFormatException
 
 class RuteTest extends Specification {
 
@@ -75,6 +76,7 @@ class RuteTest extends Specification {
 
         given:
             R10.leggTilStoppested(lillehammer, moelv, 30)
+            R10.leggTilStoppested(stange, tangen, 30)
         when:
             def avganger = R10.hentAvganger(tidspunkt, stoppested)
         then:
@@ -89,6 +91,22 @@ class RuteTest extends Specification {
             stange      | "0400"    | 0                        | []
             stange      | "0815"    | 7                        | [oslos, lillehammer]
             brumunddal  | "0815"    | 0                        | []
+    }
+
+    @Unroll
+    def 'hentAvganger: skal kaste exception dersom tidspunkt ikke er gyldig'() {
+        given:
+            R10.leggTilStoppested(lillehammer, moelv, 30)
+        expect:
+            try {
+                R10.hentAvganger(tidspunkt, stoppested)
+                assert !forventetException
+            } catch (Exception ignored) {
+                assert forventetException
+            }
+        where:
+            stoppested  | tidspunkt | forventetException  | beskrivelse
+            lillehammer | "9999"    | DataFormatException | "Ugydlig tidspunkt $tidspunkt"
     }
 
     @Unroll
